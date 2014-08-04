@@ -1,0 +1,27 @@
+#-------------------------------------------------
+#
+# Project created by QtCreator 2014-08-01T12:06:51
+#
+#-------------------------------------------------
+
+QT       += core gui
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+TARGET = MicomFSReader
+TEMPLATE = app
+
+
+SOURCES += main.cpp\
+        widget.cpp \
+    micomfs_dev.c \
+    micomfs.c \
+    saveprocess.cpp
+
+HEADERS  += widget.h \
+    micomfs_dev.h \
+    micomfs.h \
+    saveprocess.h
+
+FORMS    += widget.ui \
+    saveprocess.ui
