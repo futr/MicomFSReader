@@ -5,7 +5,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QApplication>
-#include "saveprocess.h"
+#include "progressdialog.h"
 #include "micomfs.h"
 
 namespace Ui {

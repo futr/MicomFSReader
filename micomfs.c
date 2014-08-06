@@ -471,7 +471,7 @@ char micomfs_seq_fwrite( MicomFSFile *fp, const void *src, uint16_t count )
         }
 
         /* 可能な限り一気にアクセス */
-        if ( rest > ( fp->fs->sector_size - fp->spos ) ) {
+        if ( rest >= ( fp->fs->sector_size - fp->spos ) ) {
             /* セクターアクセス以上のこっているのでセクターアクセス分書き込み */
             micomfs_fwrite( fp, (uint8_t *)src + pos, fp->fs->sector_size - fp->spos );
 
@@ -516,7 +516,7 @@ char micomfs_seq_fread( MicomFSFile *fp, void *dest, uint16_t count )
         }
 
         /* 可能な限り一気にアクセス */
-        if ( rest > ( fp->fs->sector_size - fp->spos ) ) {
+        if ( rest >= ( fp->fs->sector_size - fp->spos ) ) {
             /* セクターアクセス以上のこっているのでセクターアクセス分書き込み */
             micomfs_fread( fp, (uint8_t *)dest + pos, fp->fs->sector_size - fp->spos );
 

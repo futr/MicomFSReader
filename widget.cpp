@@ -40,6 +40,8 @@ void Widget::on_openButton_clicked()
     // Open File System
     if ( !micomfs_init_fs( &fs, ui->fileNameEdit->text().toLatin1() ) ) {
         QMessageBox::critical( this, "Error", "Can't open FileSystem" );
+
+        return;
     }
 
     // Clear variable
@@ -111,7 +113,7 @@ void Widget::on_saveButton_clicked()
     }
 
     // Create progress
-    SaveProcess *progress = new SaveProcess();
+    ProgressDialog *progress = new ProgressDialog();
 
     // Save all selected files
     for ( i = 0; i < items.count(); i++ ) {

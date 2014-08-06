@@ -16,12 +16,12 @@ SOURCES += main.cpp\
         widget.cpp \
     micomfs_dev.c \
     micomfs.c \
-    saveprocess.cpp
+    progressdialog.cpp
 
 HEADERS  += widget.h \
     micomfs_dev.h \
     micomfs.h \
-    saveprocess.h
+    progressdialog.h
 
 FORMS    += widget.ui \
-    saveprocess.ui
+    progressdialog.ui
