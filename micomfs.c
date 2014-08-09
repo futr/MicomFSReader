@@ -31,7 +31,7 @@ char micomfs_init_fs( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_t
         fpp = (FILE **)fs->device;
 
         if ( ( *fpp = fopen( dev_name, "rw" ) ) == NULL ) {
-            /* Failed */
+            /* Failed */            
             return 0;
         }
 
@@ -594,6 +594,12 @@ char micomfs_close_fs( MicomFS *fs )
         switch ( fs->dev_type ) {
         case MicomFSDeviceFile:
             fclose( *(FILE **)fs->device );
+            break;
+
+        case MicomFSDeviceWinDrive:
+#ifdef __MINGW32__
+            CloseHandle( *( (HANDLE *)fs->device ) );
+#endif
             break;
 
         default:
