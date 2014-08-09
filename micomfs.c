@@ -1,6 +1,10 @@
 #include "micomfs.h"
 #include "micomfs_dev.h"
 
+#ifdef __MINGW32__
+#include <windows.h>
+#endif
+
 char micomfs_init_fs( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type )
 {
     /* デバイスにアクセスしてFS初期化 */
@@ -41,16 +45,16 @@ char micomfs_init_fs( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_t
         fs->device = malloc( sizeof( HANDLE ) );
         handle = (HANDLE *)fs->device;
 
-        strcpy( fs->dev_name, dev_name );
+        wcscpy( (wchar_t *)fs->dev_name, (wchar_t*)dev_name );
 
         // Create file
-        *handle = CreateFile( dev_name,
-                              GENERIC_READ,
-                              FILE_SHARE_READ,
-                              NULL,
-                              OPEN_EXISTING,
-                              0,
-                              NULL );
+        *handle = CreateFileW( (LPWCH)dev_name,
+                               GENERIC_READ,
+                               0,
+                               NULL,
+                               OPEN_EXISTING,
+                               FILE_ATTRIBUTE_NORMAL,
+                               NULL );
 
         // Check error
         if ( *handle == INVALID_HANDLE_VALUE ) {

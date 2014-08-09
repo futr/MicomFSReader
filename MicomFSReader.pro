@@ -28,3 +28,12 @@ HEADERS  += widget.h \
 FORMS    += widget.ui \
     progressdialog.ui \
     logicaldrivedialog.ui
+
+OTHER_FILES += \
+    win.rc \
+    MicomFSReader.exe.manifest
+
+# Manifest
+win32 {
+    RC_FILE = win.rc
+}

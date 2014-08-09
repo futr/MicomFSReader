@@ -8,6 +8,7 @@
 #include "progressdialog.h"
 #include "logicaldrivedialog.h"
 #include "micomfs.h"
+#include <QDebug>
 
 
 namespace Ui {

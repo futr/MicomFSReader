@@ -181,16 +181,24 @@ void Widget::on_openDriveButton_clicked()
         HANDLE handle;
         VOLUME_DISK_EXTENTS diskExtents;
         DWORD dwSize;
+        WCHAR wbuf[1024];
         int ret;
 
+        // Clear array
+        for ( int i = 0; i < 1024; i++ ) {
+            wbuf[i] = L'\0';
+        }
+
         // Open Logical drive
-        handle = CreateFile( QString( "¥¥¥¥.¥¥" + dialog->getSelectedLogicalDriveName() ).toLatin1(),
-                             GENERIC_READ,
-                             FILE_SHARE_READ,
-                             NULL,
-                             OPEN_EXISTING,
-                             0,
-                             NULL );
+        QString( "\\\\.\\" + QString( dialog->getSelectedLogicalDriveName() ) + ":" ).toWCharArray( wbuf );
+
+        handle = CreateFileW( wbuf,
+                              GENERIC_READ,
+                              0,
+                              NULL,
+                              OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL,
+                              NULL );
 
         // Check error
         if ( handle == INVALID_HANDLE_VALUE ) {
@@ -221,8 +229,18 @@ void Widget::on_openDriveButton_clicked()
         // Close
         CloseHandle( handle );
 
+        // Clear array
+        for ( int i = 0; i < 1024; i++ ) {
+            wbuf[i] = L'\0';
+        }
+
+        // Create physical drive name
+        QString( "\\\\.\\PhysicalDrive" + QString().sprintf( "%d", diskExtents.Extents[0].DiskNumber ) ).toWCharArray( wbuf );
+
+        qDebug() << QString( "\\\\.\\PHYSICALDRIVE" + QString().sprintf( "%d", diskExtents.Extents[0].DiskNumber ) );
+
         // Open Filesystem
-        if ( !micomfs_init_fs( &fs, QString( "¥¥¥¥.¥¥PhysicalDrive(" + QString().sprintf( "%d", diskExistens.Extents[0].DiskNumber ) + ")" ).toLatin1(), MicomFSDeviceWinDrive ) ) {
+        if ( !micomfs_init_fs( &fs, (char *)wbuf, MicomFSDeviceWinDrive ) ) {
             QMessageBox::critical( this, "Error", "Can't open FileSystem" );
 
             return;
