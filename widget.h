@@ -6,7 +6,9 @@
 #include <QMessageBox>
 #include <QApplication>
 #include "progressdialog.h"
+#include "logicaldrivedialog.h"
 #include "micomfs.h"
+
 
 namespace Ui {
 class Widget;
@@ -30,6 +32,8 @@ private slots:
     void updateFileList();
 
     void on_saveButton_clicked();
+
+    void on_openDriveButton_clicked();
 
 private:
     Ui::Widget *ui;

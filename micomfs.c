@@ -1,7 +1,7 @@
 #include "micomfs.h"
 #include "micomfs_dev.h"
 
-char micomfs_init_fs( MicomFS *fs, const char *dev_name )
+char micomfs_init_fs( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type )
 {
     /* デバイスにアクセスしてFS初期化 */
     uint8_t signature;
@@ -9,16 +9,62 @@ char micomfs_init_fs( MicomFS *fs, const char *dev_name )
     uint32_t i;
     FILE **fpp;
 
+    /* init pointers */
+    fs->dev_name = NULL;
+    fs->device   = NULL;
+
     /* for PC ファイルを開く */
+    fs->dev_type = dev_type;
     fs->dev_name = malloc( sizeof( char ) * 1024 );
-    fs->device   = malloc( sizeof( FILE * ) );
-    strcpy( fs->dev_name, dev_name );
 
-    fpp = (FILE **)fs->device;
+    /* Open the device */
+    switch ( dev_type ) {
+    case MicomFSDeviceFile:
+        /* Normal ( or device ) file */
+        fs->device = malloc( sizeof( FILE * ) );
+        strcpy( fs->dev_name, dev_name );
 
-    if ( ( *fpp = fopen( dev_name, "rw" ) ) == NULL ) {
-        /* Failed */
+        fpp = (FILE **)fs->device;
+
+        if ( ( *fpp = fopen( dev_name, "rw" ) ) == NULL ) {
+            /* Failed */
+            return 0;
+        }
+
+        break;
+
+    case MicomFSDeviceWinDrive: {
+        /* Window's logical drive letter */
+#ifdef __MINGW32__
+        HANDLE *handle;
+
+        fs->device = malloc( sizeof( HANDLE ) );
+        handle = (HANDLE *)fs->device;
+
+        strcpy( fs->dev_name, dev_name );
+
+        // Create file
+        *handle = CreateFile( dev_name,
+                              GENERIC_READ,
+                              FILE_SHARE_READ,
+                              NULL,
+                              OPEN_EXISTING,
+                              0,
+                              NULL );
+
+        // Check error
+        if ( *handle == INVALID_HANDLE_VALUE ) {
+            return 0;
+        }
+#else
         return 0;
+        break;
+#endif
+    }
+
+    default:
+        return 0;
+        break;
     }
 
     /* デバイス上のセクター数とセクターサイズを取得 */
@@ -540,7 +586,16 @@ char micomfs_seq_fread( MicomFSFile *fp, void *dest, uint16_t count )
 char micomfs_close_fs( MicomFS *fs )
 {
     /* Close FileSystem */
-    fclose( *(FILE **)fs->device );
+    if ( fs->device != NULL ) {
+        switch ( fs->dev_type ) {
+        case MicomFSDeviceFile:
+            fclose( *(FILE **)fs->device );
+            break;
+
+        default:
+            break;
+        }
+    }
 
     free( fs->dev_name );
     free( fs->device );

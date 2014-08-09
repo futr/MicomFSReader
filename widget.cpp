@@ -38,7 +38,7 @@ void Widget::on_closeButton_clicked()
 void Widget::on_openButton_clicked()
 {
     // Open File System
-    if ( !micomfs_init_fs( &fs, ui->fileNameEdit->text().toLatin1() ) ) {
+    if ( !micomfs_init_fs( &fs, ui->fileNameEdit->text().toLatin1(), MicomFSDeviceFile ) ) {
         QMessageBox::critical( this, "Error", "Can't open FileSystem" );
 
         return;
@@ -166,4 +166,75 @@ void Widget::on_saveButton_clicked()
     }
 
     delete progress;
+}
+
+void Widget::on_openDriveButton_clicked()
+{
+    // Open Window's logical drive
+    LogicalDriveDialog *dialog;
+
+    dialog = new LogicalDriveDialog();
+
+    // Select
+    if ( dialog->exec() == QDialog::Accepted ) {
+#ifdef __WIN32__
+        HANDLE handle;
+        VOLUME_DISK_EXTENTS diskExtents;
+        DWORD dwSize;
+        int ret;
+
+        // Open Logical drive
+        handle = CreateFile( QString( "¥¥¥¥.¥¥" + dialog->getSelectedLogicalDriveName() ).toLatin1(),
+                             GENERIC_READ,
+                             FILE_SHARE_READ,
+                             NULL,
+                             OPEN_EXISTING,
+                             0,
+                             NULL );
+
+        // Check error
+        if ( handle == INVALID_HANDLE_VALUE ) {
+            QMessageBox::critical( this, "Error", "Can't open selected drive" );
+            delete dialog;
+
+            return;
+        }
+
+        // Get Physical drive name
+        ret = DeviceIoControl( handle,
+                               IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+                               NULL,
+                               0,
+                               (LPVOID) &diskExtents,
+                               (DWORD) sizeof(diskExtents),
+                               (LPDWORD) &dwSize,
+                               NULL );
+
+        // Check error
+        if ( ret == 0 ) {
+            QMessageBox::critical( this, "Error", "Can't get physical drive name" );
+            delete dialog;
+
+            return;
+        }
+
+        // Close
+        CloseHandle( handle );
+
+        // Open Filesystem
+        if ( !micomfs_init_fs( &fs, QString( "¥¥¥¥.¥¥PhysicalDrive(" + QString().sprintf( "%d", diskExistens.Extents[0].DiskNumber ) + ")" ).toLatin1(), MicomFSDeviceWinDrive ) ) {
+            QMessageBox::critical( this, "Error", "Can't open FileSystem" );
+
+            return;
+        }
+
+        // Clear variable
+        fileList = NULL;
+
+        // Update
+        updateFileList();
+#endif
+    }
+
+    delete dialog;
 }

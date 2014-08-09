@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>521</width>
-    <height>453</height>
+    <width>458</width>
+    <height>499</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,21 +19,32 @@
      <property name="title">
       <string>ファイル名</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
-       <widget class="QLineEdit" name="fileNameEdit"/>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLineEdit" name="fileNameEdit"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="selectButton">
+          <property name="text">
+           <string>選択</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="openButton">
+          <property name="text">
+           <string>開く</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QPushButton" name="selectButton">
+       <widget class="QPushButton" name="openDriveButton">
         <property name="text">
-         <string>選択</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="openButton">
-        <property name="text">
-         <string>開く</string>
+         <string>物理ドライブを開く(Windowsのみ)</string>
         </property>
        </widget>
       </item>
@@ -55,11 +66,11 @@
       <item>
        <widget class="QTreeWidget" name="fileListWidget">
         <attribute name="headerVisible">
-         <bool>true</bool>
+         <bool>false</bool>
         </attribute>
         <column>
          <property name="text">
-          <string notr="true">1</string>
+          <string notr="true"/>
          </property>
         </column>
        </widget>

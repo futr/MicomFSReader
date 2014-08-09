@@ -53,6 +53,13 @@ extern "C" {
 #endif
 
 typedef enum {
+    MicomFSDeviceAuto,
+    MicomFSDeviceSD,
+    MicomFSDeviceFile,
+    MicomFSDeviceWinDrive,
+} MicomFSDeviceType;
+
+typedef enum {
     MicomFSReturnFalse    = 0,
     MicomFSReturnTrue     = 1,
     MicomFSReturnSameName = 2,
@@ -99,6 +106,7 @@ typedef struct {
     char *dev_name;
     uint32_t dev_current_sector;
     uint16_t dev_current_spos;
+    MicomFSDeviceType dev_type;
 } MicomFS;
 
 typedef struct {
@@ -116,7 +124,7 @@ typedef struct {
     char *name;                 /* ファイル名 : ポインタしか保持しない！ */
 } MicomFSFile;
 
-char micomfs_init_fs( MicomFS *fs, const char *dev_name );
+char micomfs_init_fs( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type );
 char micomfs_close_fs( MicomFS *fs );
 char micomfs_format( MicomFS *fs, uint16_t sector_size, uint32_t sector_count, uint16_t entry_count, uint16_t used_entry_count );
 
