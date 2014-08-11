@@ -42,6 +42,8 @@ private:
     MicomFS fs;
     MicomFSFile *fileList;
     uint16_t fileCount;
+
+    bool deviceOpened;
 };
 
 #endif // WIDGET_H

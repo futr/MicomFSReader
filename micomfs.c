@@ -1,75 +1,24 @@
 #include "micomfs.h"
 #include "micomfs_dev.h"
 
-#ifdef __MINGW32__
-#include <windows.h>
-#endif
+char micomfs_open_device( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type )
+{
+    /* デバイスを開く */
+    return micomfs_dev_open( fs, dev_name, dev_type );
+}
 
-char micomfs_init_fs( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type )
+char micomfs_close_device( MicomFS *fs )
+{
+    /* デバイスを閉じる */
+    return micomfs_dev_close( fs );
+}
+
+char micomfs_init_fs( MicomFS *fs )
 {
     /* デバイスにアクセスしてFS初期化 */
     uint8_t signature;
     uint8_t data;
-    uint32_t i;
-    FILE **fpp;
-
-    /* init pointers */
-    fs->dev_name = NULL;
-    fs->device   = NULL;
-
-    /* for PC ファイルを開く */
-    fs->dev_type = dev_type;
-    fs->dev_name = malloc( sizeof( char ) * 1024 );
-
-    /* Open the device */
-    switch ( dev_type ) {
-    case MicomFSDeviceFile:
-        /* Normal ( or device ) file */
-        fs->device = malloc( sizeof( FILE * ) );
-        strcpy( fs->dev_name, dev_name );
-
-        fpp = (FILE **)fs->device;
-
-        if ( ( *fpp = fopen( dev_name, "rw" ) ) == NULL ) {
-            /* Failed */            
-            return 0;
-        }
-
-        break;
-
-    case MicomFSDeviceWinDrive: {
-        /* Window's logical drive letter */
-#ifdef __MINGW32__
-        HANDLE *handle;
-
-        fs->device = malloc( sizeof( HANDLE ) );
-        handle = (HANDLE *)fs->device;
-
-        wcscpy( (wchar_t *)fs->dev_name, (wchar_t*)dev_name );
-
-        // Create file
-        *handle = CreateFileW( (LPWCH)dev_name,
-                               GENERIC_READ,
-                               0,
-                               NULL,
-                               OPEN_EXISTING,
-                               FILE_ATTRIBUTE_NORMAL,
-                               NULL );
-
-        // Check error
-        if ( *handle == INVALID_HANDLE_VALUE ) {
-            return 0;
-        }
-#else
-        return 0;
-        break;
-#endif
-    }
-
-    default:
-        return 0;
-        break;
-    }
+    uint32_t i;    
 
     /* デバイス上のセクター数とセクターサイズを取得 */
     if ( !micomfs_dev_get_info( fs, &fs->dev_sector_size, &fs->dev_sector_count ) ) {
@@ -585,32 +534,6 @@ char micomfs_seq_fread( MicomFSFile *fp, void *dest, uint16_t count )
             return 1;
         }
     }
-}
-
-char micomfs_close_fs( MicomFS *fs )
-{
-    /* Close FileSystem */
-    if ( fs->device != NULL ) {
-        switch ( fs->dev_type ) {
-        case MicomFSDeviceFile:
-            fclose( *(FILE **)fs->device );
-            break;
-
-        case MicomFSDeviceWinDrive:
-#ifdef __MINGW32__
-            CloseHandle( *( (HANDLE *)fs->device ) );
-#endif
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    free( fs->dev_name );
-    free( fs->device );
-
-    return 1;
 }
 
 char micomfs_get_file_list( MicomFS *fs, MicomFSFile **list, uint16_t *count )

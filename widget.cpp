@@ -3,13 +3,19 @@
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::Widget)
+    ui(new Ui::Widget),
+    deviceOpened( false )
 {
     ui->setupUi(this);
 }
 
 Widget::~Widget()
 {
+    // Close device if device is opened
+    if ( deviceOpened ) {
+        micomfs_close_device( &fs );
+    }
+
     delete ui;
 }
 
@@ -37,9 +43,21 @@ void Widget::on_closeButton_clicked()
 
 void Widget::on_openButton_clicked()
 {
+    // Open file
+    deviceOpened = false;
+
+    // Open device
+    if ( !micomfs_open_device( &fs, ui->fileNameEdit->text().toUtf8().data(), MicomFSDeviceFile ) ) {
+        QMessageBox::critical( this, "Error", "Can't open device" );
+
+        return;
+    }
+
     // Open File System
-    if ( !micomfs_init_fs( &fs, ui->fileNameEdit->text().toLatin1(), MicomFSDeviceFile ) ) {
+    if ( !micomfs_init_fs( &fs ) ) {
         QMessageBox::critical( this, "Error", "Can't open FileSystem" );
+
+        micomfs_close_device( &fs );
 
         return;
     }
@@ -49,6 +67,8 @@ void Widget::on_openButton_clicked()
 
     // Update
     updateFileList();
+
+    deviceOpened = true;
 }
 
 void Widget::updateFileList()
@@ -140,6 +160,9 @@ void Widget::on_saveButton_clicked()
 
         // Write loop
         for ( j = 0; j < fp->sector_count; j++ ) {
+            // Process message
+            QApplication::processEvents();
+
             // read sector
             micomfs_seq_fread( fp, buf, 512 );
 
@@ -148,9 +171,6 @@ void Widget::on_saveButton_clicked()
 
             // Update UI
             progress->setProgressPos( j );
-
-            // Process message
-            QApplication::processEvents();
 
             // 閉じてたらキャンセル
             if ( !progress->isVisible() ) {
@@ -172,6 +192,8 @@ void Widget::on_openDriveButton_clicked()
 {
     // Open Window's logical drive
     LogicalDriveDialog *dialog;
+
+    deviceOpened = false;
 
     dialog = new LogicalDriveDialog();
 
@@ -235,16 +257,31 @@ void Widget::on_openDriveButton_clicked()
         }
 
         // Create physical drive name
-        QString( "\\\\.\\PhysicalDrive" + QString().sprintf( "%d", diskExtents.Extents[0].DiskNumber ) ).toWCharArray( wbuf );
+        QString( "\\\\.\\PHYSICALDRIVE" + QString().sprintf( "%lu", diskExtents.Extents[0].DiskNumber ) ).toWCharArray( wbuf );
 
-        qDebug() << QString( "\\\\.\\PHYSICALDRIVE" + QString().sprintf( "%d", diskExtents.Extents[0].DiskNumber ) );
+        // Open device
+        if ( !micomfs_open_device( &fs, (char *)wbuf, MicomFSDeviceWinDrive ) ) {
+            QMessageBox::critical( this, "Error", "Can't open device" );
 
-        // Open Filesystem
-        if ( !micomfs_init_fs( &fs, (char *)wbuf, MicomFSDeviceWinDrive ) ) {
-            QMessageBox::critical( this, "Error", "Can't open FileSystem" );
+            delete dialog;
 
             return;
         }
+
+        // Open Filesystem
+        if ( !micomfs_init_fs( &fs ) ) {
+            QMessageBox::critical( this, "Error", "Can't open FileSystem" );
+
+            micomfs_close_device( &fs );
+
+            delete dialog;
+
+            return;
+        }
+
+        QMessageBox::critical( this, "Error", QString::number( fs.dev_sector_count ) );
+        QMessageBox::critical( this, "Error", QString::number( fs.dev_sector_size ) );
+        QMessageBox::critical( this, "Error", QString::number( fs.entry_count ) );
 
         // Clear variable
         fileList = NULL;
@@ -253,6 +290,8 @@ void Widget::on_openDriveButton_clicked()
         updateFileList();
 #endif
     }
+
+    deviceOpened = true;
 
     delete dialog;
 }
