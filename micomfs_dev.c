@@ -35,24 +35,24 @@ char micomfs_dev_get_info( MicomFS *fs, uint16_t *sector_size, uint32_t *sector_
     }
     case MicomFSDeviceWinDrive: {
         HANDLE handle;
-        DISK_GEOMETRY dg;
+        DISK_GEOMETRY_EX dgex;
         DWORD dw;
 
         handle = *( (HANDLE *)fs->device );
 
         /* デバイスの情報取得 */
         DeviceIoControl( handle,
-                         IOCTL_DISK_GET_DRIVE_GEOMETRY,
+                         IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
                          NULL,
                          0,
-                         (LPVOID) &dg,
-                         (DWORD) sizeof( dg ),
+                         (LPVOID) &dgex,
+                         (DWORD) sizeof( dgex ),
                          (LPDWORD) &dw,
                          NULL );
 
         /* セクター数とセクターサイズ取得 */
-        *sector_size  = dg.BytesPerSector;
-        *sector_count = ( dg.SectorsPerTrack ) * ( dg.TracksPerCylinder ) * ( dg.Cylinders.QuadPart );
+        *sector_size  = dgex.Geometry.BytesPerSector;
+        *sector_count = dgex.DiskSize.QuadPart / *sector_size;
 
         break;
     }

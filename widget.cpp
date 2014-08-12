@@ -251,6 +251,7 @@ void Widget::on_openDriveButton_clicked()
         // Close
         CloseHandle( handle );
 
+        /*
         // Clear array
         for ( int i = 0; i < 1024; i++ ) {
             wbuf[i] = L'\0';
@@ -258,8 +259,9 @@ void Widget::on_openDriveButton_clicked()
 
         // Create physical drive name
         QString( "\\\\.\\PHYSICALDRIVE" + QString().sprintf( "%lu", diskExtents.Extents[0].DiskNumber ) ).toWCharArray( wbuf );
+        */
 
-        // Open device
+        // Open device ( 権限が不要なので論理ドライブ名のままで実行 )
         if ( !micomfs_open_device( &fs, (char *)wbuf, MicomFSDeviceWinDrive ) ) {
             QMessageBox::critical( this, "Error", "Can't open device" );
 
@@ -278,10 +280,6 @@ void Widget::on_openDriveButton_clicked()
 
             return;
         }
-
-        QMessageBox::critical( this, "Error", QString::number( fs.dev_sector_count ) );
-        QMessageBox::critical( this, "Error", QString::number( fs.dev_sector_size ) );
-        QMessageBox::critical( this, "Error", QString::number( fs.entry_count ) );
 
         // Clear variable
         fileList = NULL;

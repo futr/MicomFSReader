@@ -34,6 +34,9 @@ OTHER_FILES += \
     MicomFSReader.exe.manifest
 
 # Manifest
-win32 {
-    RC_FILE = win.rc
-}
+#
+#win32 {
+#    RC_FILE = win.rc
+#}
+#
+
