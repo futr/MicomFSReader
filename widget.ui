@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Widget</string>
+   <string>MicomFSReader</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -44,7 +44,7 @@
       <item>
        <widget class="QPushButton" name="openDriveButton">
         <property name="text">
-         <string>ドライブを開く(Windowsのみ)</string>
+         <string>ドライブを開く ( Windowsのみ )</string>
         </property>
        </widget>
       </item>

@@ -141,6 +141,19 @@ void Widget::on_saveButton_clicked()
         QFile file;
         MicomFSFile *fp;
         char buf[512];
+        int bytes;
+        int bytes_per_sec;
+        time_t before_time;
+        QThread *saveFileThread;
+        WriteFileWorker *saveFileWorker;
+        QMessageBox warningBox;
+
+        // Make warning box
+        warningBox.setWindowTitle( "失敗" );
+        warningBox.setText( "ファイルの書き出しに失敗しました." );
+        warningBox.setInformativeText( "何らかの問題か，ファイルシステムに異常が発生していた可能性があります．" );
+        warningBox.setIcon( QMessageBox::Warning );
+        warningBox.setStandardButtons( QMessageBox::Ok );
 
         // Get file pointer
         fp = (MicomFSFile *)items[i]->data( 2, Qt::UserRole ).value<void *>();
@@ -149,22 +162,82 @@ void Widget::on_saveButton_clicked()
         file.setFileName( name + "/" + fp->name );
         file.open( QIODevice::WriteOnly );
 
+        // 上書き確認
+        if ( file.exists() ) {
+            QMessageBox::StandardButton btn = QMessageBox::question( this, "Overwrite", QString( "%1 is still existing.\nOverwrite it?" ).arg( file.fileName() ), QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel );
+
+            if ( btn == QMessageBox::No ) {
+                file.close();
+
+                continue;
+            } else if ( btn == QMessageBox::Cancel ) {
+                file.close();
+
+                break;
+            }
+        }
+
         // Write file
+        // DEBUG
         progress->setWindowModality( Qt::ApplicationModal );
-        progress->show();
-        progress->setProgressPos( 0 );
+        progress->setProgressPos( 0, 0, 0, "Null" );
         progress->setProgressMax( fp->sector_count );
 
         // Start file access
         micomfs_start_fread( fp, 0 );
 
+        // Init
+        before_time = time( NULL );
+        bytes = 0;
+        bytes_per_sec = 0;
+
+        // Start Save File Thread
+        saveFileThread = new QThread( this );
+        saveFileWorker = new WriteFileWorker();
+
+        // Setup
+        saveFileWorker->moveToThread( saveFileThread );
+        saveFileWorker->setParameter( &file, fp, 100 );
+        connect( saveFileWorker, SIGNAL(progress(int,int,int,QString)), progress, SLOT(setProgressPos(int,int,int,QString)) );
+        connect( saveFileWorker, SIGNAL(finished()),      progress,       SLOT(accept()) );
+        connect( progress,       SIGNAL(finished(int)),   saveFileWorker, SLOT(stopSave()) );
+        connect( saveFileThread, SIGNAL(started()),       saveFileWorker, SLOT(doSaveFile()) );
+
+        // Exec
+        saveFileThread->start();
+
+        // Open dialog
+        progress->exec();
+
+        // Wait Save Thread
+        saveFileThread->quit();
+        saveFileThread->wait();
+
+        // Check a error
+        if ( saveFileWorker->error() ) {
+            warningBox.exec();
+        }
+
+        // Delete
+        delete saveFileWorker;
+        delete saveFileThread;
+
+        /*
         // Write loop
         for ( j = 0; j < fp->sector_count; j++ ) {
-            // Process message
-            QApplication::processEvents();
+            // DEBUG
+            if ( ( fp->sector_count < 10000 ) || ( j % 10000 == 0 ) ) {
+                // Process message
+                QApplication::processEvents();
+            }
 
             // read sector
-            micomfs_seq_fread( fp, buf, 512 );
+            if ( !micomfs_seq_fread( fp, buf, 512 ) ) {
+                // エラーが発生したので終了
+                QMessageBox::warning( this, "ファイル書き出し終了", "ファイルの書き出しに失敗しました．\n何らかの問題か，ファイルシステムに異常が発生していた可能性があります．" );
+
+                break;
+            }
 
             // write sector to output file
             file.write( buf, 512 );
@@ -172,20 +245,39 @@ void Widget::on_saveButton_clicked()
             // Update UI
             progress->setProgressPos( j );
 
+            // Calc Bps
+            if ( time( NULL ) != before_time ) {
+                before_time = time( NULL );
+
+                bytes_per_sec = bytes;
+                bytes = 0;
+            } else {
+                bytes += 512;
+            }
+
+            // Set label
+            QString label;
+
+            label = QString( "%1\n%2 / %3\n%4[MiBps]" ).arg( fp->name ).arg( j ).arg( fp->sector_count ).arg( bytes_per_sec / 1024.0 / 1024.0 );
+
+            progress->setLabelCaption( label );
+
             // 閉じてたらキャンセル
             if ( !progress->isVisible() ) {
                 break;
             }
         }
+        */
 
         // Close file
-        micomfs_fclose( fp );
+        // Closeはエントリーを書き出してしまうので使わない
+        // micomfs_fclose( fp );
 
         // close file
         file.close();
     }
 
-    delete progress;
+    progress->deleteLater();
 }
 
 void Widget::on_openDriveButton_clicked()

@@ -34,6 +34,7 @@ char micomfs_dev_get_info( MicomFS *fs, uint16_t *sector_size, uint32_t *sector_
         break;
     }
     case MicomFSDeviceWinDrive: {
+#ifdef __MINGW32__
         HANDLE handle;
         DISK_GEOMETRY_EX dgex;
         DWORD dw;
@@ -53,7 +54,7 @@ char micomfs_dev_get_info( MicomFS *fs, uint16_t *sector_size, uint32_t *sector_
         /* セクター数とセクターサイズ取得 */
         *sector_size  = dgex.Geometry.BytesPerSector;
         *sector_count = dgex.DiskSize.QuadPart / *sector_size;
-
+#endif
         break;
     }
     default:
@@ -217,7 +218,9 @@ char micomfs_dev_write( MicomFS *fs, const void *src, uint16_t count )
     case MicomFSDeviceFile: {
         FILE *fp = *(FILE **)fs->device;
 
-        fwrite( src, 1, count, fp );
+        if ( fwrite( src, 1, count, fp ) != count ) {
+            return 0;
+        }
 
         break;
     }
@@ -269,7 +272,9 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         fs->dev_current_spos   = 0;
 
         /* 移動 */
-        fseeko( fp, address, SEEK_SET );
+        if ( fseeko( fp, address, SEEK_SET ) ) {
+            return 0;
+        }
 
         break;
     }
@@ -285,6 +290,8 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
 
         /* 読み込み */
+        // DEBUG
+        // エラーチェック必要
         ReadFile( *( (HANDLE *)fs->device ), sbuf, sizeof( sbuf ), &dw, NULL );
 #endif
         break;
@@ -308,7 +315,9 @@ char micomfs_dev_read( MicomFS *fs, void *dest, uint16_t count )
     case MicomFSDeviceFile: {
         FILE *fp = *(FILE **)fs->device;
 
-        fread( dest, 1, count, fp );
+        if ( fread( dest, 1, count, fp ) != count ) {
+            return 0;
+        }
 
         break;
     }

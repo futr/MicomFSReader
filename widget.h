@@ -5,8 +5,10 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QApplication>
+#include <QThread>
 #include "progressdialog.h"
 #include "logicaldrivedialog.h"
+#include "writefileworker.h"
 #include "micomfs.h"
 #include <QDebug>
 

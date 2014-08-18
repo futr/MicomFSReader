@@ -17,13 +17,15 @@ SOURCES += main.cpp\
     micomfs_dev.c \
     micomfs.c \
     progressdialog.cpp \
-    logicaldrivedialog.cpp
+    logicaldrivedialog.cpp \
+    writefileworker.cpp
 
 HEADERS  += widget.h \
     micomfs_dev.h \
     micomfs.h \
     progressdialog.h \
-    logicaldrivedialog.h
+    logicaldrivedialog.h \
+    writefileworker.h
 
 FORMS    += widget.ui \
     progressdialog.ui \

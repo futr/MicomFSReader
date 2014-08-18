@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>289</width>
-    <height>122</height>
+    <height>118</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>保存中</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -34,6 +34,12 @@
      </property>
      <property name="value">
       <number>0</number>
+     </property>
+     <property name="textVisible">
+      <bool>true</bool>
+     </property>
+     <property name="invertedAppearance">
+      <bool>false</bool>
      </property>
     </widget>
    </item>

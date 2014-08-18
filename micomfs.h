@@ -18,9 +18,22 @@
  *
  */
 
-
 #ifndef MICOMFS_H_INCLUDED
 #define MICOMFS_H_INCLUDED
+
+/*
+ * パソコンなどのスペックに余裕があるデバイスで，
+ * MICOMFS_ENABLE_EXFUNCTIONS
+ * を有効にすると
+ * char micomfs_fdelete( MicomFS *fs, const char *name );
+ * char micomfs_clean_fs( MicomFS *fs );
+ * char micomfs_get_file_list( MicomFS *fs, MicomFSFile **list, uint16_t *count );
+ * が利用可能になります
+ * ( clean_fsとfdeleteはまだ実装していません )
+ *
+ */
+
+#define MICOMFS_ENABLE_EXFUNCTIONS
 
 #include <stdio.h>
 #include <string.h>
@@ -48,13 +61,11 @@ typedef enum {
     MicomFSReturnSameName = 2,
 } MicomFSReturn;
 
-/*
 typedef enum {
     MicomFSFileModeRead,
     MicomFSFileModeWrite,
     MicomFSFileModeReadWrite,
 } MicomFSFileMode;
-*/
 
 typedef enum {
     MicomFSFileAccessModeNormal       = 1 << 0,
@@ -134,10 +145,8 @@ char micomfs_read_entry( MicomFS *fs, MicomFSFile *fp, uint16_t entry_id, const 
 char micomfs_write_entry( MicomFSFile *fp );
 
 /* 以下PCとか大富豪用 */
-/*
 char micomfs_fdelete( MicomFS *fs, const char *name );
 char micomfs_clean_fs( MicomFS *fs );
-*/
 char micomfs_get_file_list( MicomFS *fs, MicomFSFile **list, uint16_t *count );
 
 #ifdef __cplusplus

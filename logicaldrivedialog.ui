@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>論理ドライブを選択</string>
+   <string>ドライブを選択</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

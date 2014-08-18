@@ -15,11 +15,14 @@ public:
     explicit ProgressDialog(QWidget *parent = 0);
     ~ProgressDialog();
 
-    void setProgressPos( int pos );
     void setProgressMax( int max );
+    void setLabelCaption( QString &caption );
 
 private:
     Ui::ProgressDialog *ui;
+
+public slots:
+    void setProgressPos( int pos , int max, int bytesPerSec, QString fileName );
 };
 
 #endif // PROGRESSDIALOG_H
