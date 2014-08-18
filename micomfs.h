@@ -4,10 +4,6 @@
  * FATなし、削除・拡張不可能
  * 読み込み・書きこみ単位はセクターのみ
  *
- * ファイル情報破壊を阻止するため、定期的に
- * micomfs_write_entry( MicomFSFile *fp );
- * を実行してください
- *
  * --- 制約 ---
  *
  * fcreateでファイルを作成した場合、そのファイルをfcloseするまで
@@ -56,6 +52,12 @@ typedef enum {
 } MicomFSDeviceType;
 
 typedef enum {
+    MicomFSDeviceModeRead,
+    MicomFSDeviceModeWrite,
+    MicomFSDeviceModeReadWrite,
+} MicomFSDeviceMode;
+
+typedef enum {
     MicomFSReturnFalse    = 0,
     MicomFSReturnTrue     = 1,
     MicomFSReturnSameName = 2,
@@ -66,12 +68,6 @@ typedef enum {
     MicomFSFileModeWrite,
     MicomFSFileModeReadWrite,
 } MicomFSFileMode;
-
-typedef enum {
-    MicomFSFileAccessModeNormal       = 1 << 0,
-    MicomFSFileAccessModeAutoStop     = 1 << 1,
-    MicomFSFileAccessModeAutoContinue = 1 << 2,
-} MicomFSFileAccessMode;
 
 typedef enum {
     MicomFSFileStatusStop,
@@ -108,6 +104,7 @@ typedef struct {
     uint32_t current_sector;    /* アクセス中セクタ番号 */
     uint16_t spos;              /* セクター内位置 */
     MicomFSFileStatus status;   /* アクセス状態 */
+    MicomFSFileMode mode; /* Access mode */
 
     uint16_t entry_id;          /* このエントリのセクタ番号 */
     uint8_t  flag;              /* フラグ */
@@ -118,14 +115,14 @@ typedef struct {
     char *name;                 /* ファイル名 */
 } MicomFSFile;
 
-char micomfs_open_device( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type );
+char micomfs_open_device( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type, MicomFSDeviceMode mode );
 char micomfs_close_device( MicomFS *fs );
 
 char micomfs_init_fs( MicomFS *fs );
 char micomfs_format( MicomFS *fs, uint16_t sector_size, uint32_t sector_count, uint16_t entry_count, uint16_t used_entry_count );
 
 char micomfs_fcreate( MicomFS *fs, MicomFSFile *fp, char *name, uint32_t reserved_sector_count );
-char micomfs_fopen( MicomFS *fs, MicomFSFile *fp, char *name );
+char micomfs_fopen(MicomFS *fs, MicomFSFile *fp, MicomFSFileMode mode, char *name );
 char micomfs_fclose( MicomFSFile *fp );
 
 char micomfs_start_fwrite( MicomFSFile *fp, uint32_t sector );

@@ -47,7 +47,7 @@ void Widget::on_openButton_clicked()
     deviceOpened = false;
 
     // Open device
-    if ( !micomfs_open_device( &fs, ui->fileNameEdit->text().toUtf8().data(), MicomFSDeviceFile ) ) {
+    if ( !micomfs_open_device( &fs, ui->fileNameEdit->text().toUtf8().data(), MicomFSDeviceFile, MicomFSDeviceModeRead ) ) {
         QMessageBox::critical( this, "Error", "Can't open device" );
 
         return;
@@ -222,56 +222,8 @@ void Widget::on_saveButton_clicked()
         delete saveFileWorker;
         delete saveFileThread;
 
-        /*
-        // Write loop
-        for ( j = 0; j < fp->sector_count; j++ ) {
-            // DEBUG
-            if ( ( fp->sector_count < 10000 ) || ( j % 10000 == 0 ) ) {
-                // Process message
-                QApplication::processEvents();
-            }
-
-            // read sector
-            if ( !micomfs_seq_fread( fp, buf, 512 ) ) {
-                // エラーが発生したので終了
-                QMessageBox::warning( this, "ファイル書き出し終了", "ファイルの書き出しに失敗しました．\n何らかの問題か，ファイルシステムに異常が発生していた可能性があります．" );
-
-                break;
-            }
-
-            // write sector to output file
-            file.write( buf, 512 );
-
-            // Update UI
-            progress->setProgressPos( j );
-
-            // Calc Bps
-            if ( time( NULL ) != before_time ) {
-                before_time = time( NULL );
-
-                bytes_per_sec = bytes;
-                bytes = 0;
-            } else {
-                bytes += 512;
-            }
-
-            // Set label
-            QString label;
-
-            label = QString( "%1\n%2 / %3\n%4[MiBps]" ).arg( fp->name ).arg( j ).arg( fp->sector_count ).arg( bytes_per_sec / 1024.0 / 1024.0 );
-
-            progress->setLabelCaption( label );
-
-            // 閉じてたらキャンセル
-            if ( !progress->isVisible() ) {
-                break;
-            }
-        }
-        */
-
-        // Close file
-        // Closeはエントリーを書き出してしまうので使わない
-        // micomfs_fclose( fp );
+        // 閉じる
+        micomfs_fclose( fp );
 
         // close file
         file.close();

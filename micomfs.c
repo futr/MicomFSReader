@@ -1,10 +1,10 @@
 #include "micomfs.h"
 #include "micomfs_dev.h"
 
-char micomfs_open_device( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type )
+char micomfs_open_device(MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type , MicomFSDeviceMode mode )
 {
     /* デバイスを開く */
-    return micomfs_dev_open( fs, dev_name, dev_type );
+    return micomfs_dev_open( fs, dev_name, dev_type, mode );
 }
 
 char micomfs_close_device( MicomFS *fs )
@@ -145,6 +145,7 @@ char micomfs_fcreate( MicomFS *fs, MicomFSFile *fp, char *name, uint32_t reserve
     fp->spos = 0;
     fp->status = MicomFSFileStatusStop;
     fp->name = name;
+    fp->mode = MicomFSFileModeWrite;
 
     /* エントリー書き出し */
     micomfs_write_entry( fp );
@@ -213,6 +214,7 @@ char micomfs_read_entry( MicomFS *fs, MicomFSFile *fp, uint16_t entry_id, const 
     fp->current_sector = 0;
     fp->entry_id = entry_id;
     fp->status = MicomFSFileStatusStop;
+    fp->mode   = MicomFSFileModeRead;
 
     if ( same ) {
         return MicomFSReturnSameName;
@@ -259,7 +261,7 @@ char micomfs_write_entry( MicomFSFile *fp )
 }
 
 
-char micomfs_fopen( MicomFS *fs, MicomFSFile *fp, char *name )
+char micomfs_fopen(MicomFS *fs, MicomFSFile *fp, MicomFSFileMode mode, char *name )
 {
     /* ファイルを開く */
     uint32_t i;
@@ -280,8 +282,9 @@ char micomfs_fopen( MicomFS *fs, MicomFSFile *fp, char *name )
         return 0;
     }
 
-    /* Set the file name */
+    /* init */
     fp->name = name;
+    fp->mode = mode;
 
     return 1;
 }
@@ -297,8 +300,10 @@ char micomfs_fclose( MicomFSFile *fp )
         micomfs_stop_fwrite( fp, 0 );
     }
 
-    /* エントリーを書き込む */
-    micomfs_write_entry( fp );
+    /* 必要ならエントリーを書き込む */
+    if ( fp->mode == MicomFSFileModeReadWrite || fp->mode == MicomFSFileModeWrite ) {
+        micomfs_write_entry( fp );
+    }
 
     return 1;
 }

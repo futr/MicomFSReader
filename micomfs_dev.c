@@ -10,9 +10,6 @@
 
 /*
  * Windowsのセクターアクセスも境界でセクタサイズしか許されていない
- * Writeはまだ書き換えてない
- * CHSの計算に間違いがあるので総セクタがおかしくなってる
- *
  */
 
 static char sbuf[512];
@@ -64,10 +61,11 @@ char micomfs_dev_get_info( MicomFS *fs, uint16_t *sector_size, uint32_t *sector_
     return 1;
 }
 
-char micomfs_dev_open( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type )
+char micomfs_dev_open( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_type, MicomFSDeviceMode dev_mode )
 {
     /* デバイスを開く */
     FILE **fpp;
+    const char *mode;
 
     /* init pointers */
     fs->dev_name = NULL;
@@ -86,7 +84,26 @@ char micomfs_dev_open( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_
 
         fpp = (FILE **)fs->device;
 
-        if ( ( *fpp = fopen( dev_name, "rw" ) ) == NULL ) {
+        /* Set access mode */
+        switch ( dev_mode ) {
+        case MicomFSDeviceModeRead:
+            mode = "r";
+            break;
+
+        case MicomFSDeviceModeReadWrite:
+            mode = "rw";
+            break;
+
+        case MicomFSDeviceModeWrite:
+            mode = "w";
+            break;
+
+        default:
+            mode = "r";
+            break;
+        }
+
+        if ( ( *fpp = fopen( dev_name, mode ) ) == NULL ) {
             /* Failed */
             free( fs->dev_name );
             free( fs->device );
@@ -100,22 +117,42 @@ char micomfs_dev_open( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_
         /* Window's logical drive letter */
 #ifdef __MINGW32__
         HANDLE *handle;
+        DWORD mode;
 
         fs->device = malloc( sizeof( HANDLE ) );
         handle = (HANDLE *)fs->device;
 
         wcscpy( (wchar_t *)fs->dev_name, (wchar_t*)dev_name );
 
-        // Create file
+        /* Set access mode */
+        switch ( dev_mode ) {
+        case MicomFSDeviceModeRead:
+            mode = GENERIC_READ;
+            break;
+
+        case MicomFSDeviceModeReadWrite:
+            mode = GENERIC_READ | GENERIC_WRITE;
+            break;
+
+        case MicomFSDeviceModeWrite:
+            mode = GENERIC_WRITE;
+            break;
+
+        default:
+            mode = GENERIC_READ;
+            break;
+        }
+
+        /* Create file */
         *handle = CreateFileW( (LPCWSTR)dev_name,
-                               GENERIC_READ,
+                               mode,
                                0,
                                NULL,
                                OPEN_EXISTING,
                                FILE_ATTRIBUTE_NORMAL,
                                NULL );
 
-        // Check error
+        /* Check error */
         if ( *handle == INVALID_HANDLE_VALUE ) {
             free( fs->dev_name );
             free( fs->device );
@@ -195,10 +232,12 @@ char micomfs_dev_start_write( MicomFS *fs, uint32_t sector )
 #ifdef __MINGW32__
         /* 移動 */
         uint64_t address;
+        DWORD dw;
 
         address = (uint64_t)sector * fs->dev_sector_size;
 
         SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
+
 #endif
         break;
     }
@@ -227,19 +266,22 @@ char micomfs_dev_write( MicomFS *fs, const void *src, uint16_t count )
 
     case MicomFSDeviceWinDrive: {
 #ifdef __MINGW32__
-        DWORD dw;
-        /*
-        SG_REQ
-
-        DeviceIoControl( *( (HANDLE *)fs->device ),
-                         IOCTL_DISK_WRITE,
-                         NULL,
-                         0,
-                         src,
-                         count,
-                         NULL );
-        */
         WriteFile( *( (HANDLE *)fs->device ), src, count, &dw, NULL );
+
+        uint64_t address;
+        DWORD dw;
+
+        address = (uint64_t)sector * fs->dev_sector_size;
+
+        SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
+
+        /* 読み込み */
+        ReadFile( *( (HANDLE *)fs->device ), sbuf, sizeof( sbuf ), &dw, NULL );
+
+        /* エラーチェック */
+        if ( dw != sizeof( sbuf ) ) {
+            return 0;
+        }
 #endif
         break;
     }
@@ -290,9 +332,12 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
 
         /* 読み込み */
-        // DEBUG
-        // エラーチェック必要
         ReadFile( *( (HANDLE *)fs->device ), sbuf, sizeof( sbuf ), &dw, NULL );
+
+        /* エラーチェック */
+        if ( dw != sizeof( sbuf ) ) {
+            return 0;
+        }
 #endif
         break;
     }
