@@ -232,12 +232,10 @@ char micomfs_dev_start_write( MicomFS *fs, uint32_t sector )
 #ifdef __MINGW32__
         /* 移動 */
         uint64_t address;
-        DWORD dw;
 
         address = (uint64_t)sector * fs->dev_sector_size;
 
         SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
-
 #endif
         break;
     }
@@ -246,6 +244,9 @@ char micomfs_dev_start_write( MicomFS *fs, uint32_t sector )
         return 0;
         break;
     }
+
+    /* セクター内位置を0に */
+    spos = 0;
 
     return 1;
 }
@@ -266,22 +267,11 @@ char micomfs_dev_write( MicomFS *fs, const void *src, uint16_t count )
 
     case MicomFSDeviceWinDrive: {
 #ifdef __MINGW32__
-        WriteFile( *( (HANDLE *)fs->device ), src, count, &dw, NULL );
+        /* sbufへコピー */
+        memcpy( sbuf + spos, src, count );
 
-        uint64_t address;
-        DWORD dw;
-
-        address = (uint64_t)sector * fs->dev_sector_size;
-
-        SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
-
-        /* 読み込み */
-        ReadFile( *( (HANDLE *)fs->device ), sbuf, sizeof( sbuf ), &dw, NULL );
-
-        /* エラーチェック */
-        if ( dw != sizeof( sbuf ) ) {
-            return 0;
-        }
+        /* 進める */
+        spos += count;
 #endif
         break;
     }
@@ -296,6 +286,32 @@ char micomfs_dev_write( MicomFS *fs, const void *src, uint16_t count )
 char micomfs_dev_stop_write( MicomFS *fs )
 {
     /* セクターライト終了 */
+
+
+    switch ( fs->dev_type ) {
+    case MicomFSDeviceFile: {
+        break;
+    }
+
+    case MicomFSDeviceWinDrive: {
+#ifdef __MINGW32__
+        DWORD dw;
+
+        /* 書き込み */
+        WriteFile( *( (HANDLE *)fs->device ), sbuf, sizeof( sbuf ), &dw, NULL );
+
+        /* エラーチェック */
+        if ( dw != sizeof( sbuf ) ) {
+            return 0;
+        }
+#endif
+        break;
+    }
+
+    default:
+        break;
+    }
+
     return 1;
 }
 

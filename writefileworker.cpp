@@ -1,7 +1,8 @@
 #include "writefileworker.h"
 
 WriteFileWorker::WriteFileWorker(QObject *parent) :
-    QObject(parent)
+    QObject(parent),
+    m_running( false )
 {
 }
 
@@ -11,10 +12,20 @@ bool WriteFileWorker::error()
     return m_error;
 }
 
-void WriteFileWorker::setParameter( QFile *writeFile, MicomFSFile *readFile, int intervalInMS )
+int WriteFileWorker::getProgress()
+{
+    return m_progress;
+}
+
+bool WriteFileWorker::isRunning()
+{
+    // 走っているか
+    return m_running;
+}
+
+void WriteFileWorker::setParameter( QFile *writeFile, MicomFSFile *readFile )
 {
     // Set the parameter
-    this->interval  = intervalInMS;
     this->readFile  = readFile;
     this->writeFile = writeFile;
 }
@@ -23,22 +34,17 @@ void WriteFileWorker::doSaveFile( void )
 {
     // Save readFile to writeFile
     uint32_t i;
-    QTimer intervalTimer;
     char buf[512];
 
     // init
-    beforePos = 0;
-    stopFlag  = false;
-    m_error   = false;
-
-    // Start interval timer
-    connect( &intervalTimer, SIGNAL(timeout()), this, SLOT(updateProgress()) );
-    intervalTimer.setInterval( interval );
-    intervalTimer.start();
+    m_progress = 0;
+    stopFlag   = false;
+    m_error    = false;
+    m_running  = true;
 
     // Save all sectors
     for ( i = 0; i < readFile->sector_count; i++ ) {
-        // Checl the flag
+        // Check the flag
         if ( stopFlag ) {
             break;
         }
@@ -52,9 +58,10 @@ void WriteFileWorker::doSaveFile( void )
 
         // write sector to output file
         writeFile->write( buf, 512 );
-    }
 
-    intervalTimer.stop();
+        // Set progress
+        m_progress = i;
+    }
 
     // emit error
     if ( m_error ) {
@@ -62,19 +69,12 @@ void WriteFileWorker::doSaveFile( void )
     }
 
     emit finished();
+
+    m_running = false;
 }
 
 void WriteFileWorker::stopSave()
 {
     // Stop saving
     stopFlag = true;
-}
-
-void WriteFileWorker::updateProgress( void )
-{
-    bytesPerSec = ( readFile->sector_count - beforePos ) * 512 / ( interval / 1000.0 );
-
-    beforePos = readFile->current_sector;
-
-    emit progress( readFile->current_sector, readFile->sector_count, bytesPerSec, readFile->name );
 }

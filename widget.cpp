@@ -119,7 +119,6 @@ void Widget::on_saveButton_clicked()
     QString name;
     QList<QTreeWidgetItem *> items = ui->fileListWidget->selectedItems();
     int i;
-    uint32_t j;
 
     if ( items.count() == 0 ) {
         return;
@@ -140,13 +139,12 @@ void Widget::on_saveButton_clicked()
         // Save file
         QFile file;
         MicomFSFile *fp;
-        char buf[512];
-        int bytes;
-        int bytes_per_sec;
-        time_t before_time;
         QThread *saveFileThread;
         WriteFileWorker *saveFileWorker;
         QMessageBox warningBox;
+        time_t beforeTime;
+        int beforeProgress;
+        int currentProgress;
 
         // Make warning box
         warningBox.setWindowTitle( "失敗" );
@@ -158,24 +156,22 @@ void Widget::on_saveButton_clicked()
         // Get file pointer
         fp = (MicomFSFile *)items[i]->data( 2, Qt::UserRole ).value<void *>();
 
-        // Open file
+        // Set file name
         file.setFileName( name + "/" + fp->name );
-        file.open( QIODevice::WriteOnly );
 
         // 上書き確認
         if ( file.exists() ) {
-            QMessageBox::StandardButton btn = QMessageBox::question( this, "Overwrite", QString( "%1 is still existing.\nOverwrite it?" ).arg( file.fileName() ), QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel );
+            QMessageBox::StandardButton btn = QMessageBox::question( this, "Overwrite", QString( "%1 is already existing.\nOverwrite it?" ).arg( file.fileName() ), QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel );
 
             if ( btn == QMessageBox::No ) {
-                file.close();
-
                 continue;
             } else if ( btn == QMessageBox::Cancel ) {
-                file.close();
-
                 break;
             }
         }
+
+        // Open
+        file.open( QIODevice::WriteOnly );
 
         // Write file
         // DEBUG
@@ -186,28 +182,46 @@ void Widget::on_saveButton_clicked()
         // Start file access
         micomfs_start_fread( fp, 0 );
 
-        // Init
-        before_time = time( NULL );
-        bytes = 0;
-        bytes_per_sec = 0;
-
         // Start Save File Thread
         saveFileThread = new QThread( this );
         saveFileWorker = new WriteFileWorker();
 
         // Setup
         saveFileWorker->moveToThread( saveFileThread );
-        saveFileWorker->setParameter( &file, fp, 100 );
-        connect( saveFileWorker, SIGNAL(progress(int,int,int,QString)), progress, SLOT(setProgressPos(int,int,int,QString)) );
-        connect( saveFileWorker, SIGNAL(finished()),      progress,       SLOT(accept()) );
-        connect( progress,       SIGNAL(finished(int)),   saveFileWorker, SLOT(stopSave()) );
-        connect( saveFileThread, SIGNAL(started()),       saveFileWorker, SLOT(doSaveFile()) );
+        saveFileWorker->setParameter( &file, fp );
+
+        connect( saveFileWorker, SIGNAL(finished()),    progress,       SLOT(accept()) );
+        connect( progress,       SIGNAL(finished(int)), saveFileWorker, SLOT(stopSave()) );
+        connect( saveFileThread, SIGNAL(started()),     saveFileWorker, SLOT(doSaveFile()) );
 
         // Exec
         saveFileThread->start();
 
+        beforeTime     = time( NULL );
+        beforeProgress = 0;
+
         // Open dialog
-        progress->exec();
+        progress->show();
+
+        // Event loop
+        while ( 1 ) {
+            if ( !saveFileWorker->isRunning() ) {
+                break;
+            }
+
+            // Update progress
+            if ( beforeTime != time( NULL ) ) {
+                beforeTime = time( NULL );
+
+                currentProgress = saveFileWorker->getProgress();
+
+                progress->setProgressPos( currentProgress, fp->sector_count, ( currentProgress - beforeProgress ) * 512, fp->name );
+
+                beforeProgress = currentProgress;
+            }
+
+            QApplication::processEvents();
+        }
 
         // Wait Save Thread
         saveFileThread->quit();
@@ -306,7 +320,7 @@ void Widget::on_openDriveButton_clicked()
         */
 
         // Open device ( 権限が不要なので論理ドライブ名のままで実行 )
-        if ( !micomfs_open_device( &fs, (char *)wbuf, MicomFSDeviceWinDrive ) ) {
+        if ( !micomfs_open_device( &fs, (char *)wbuf, MicomFSDeviceWinDrive, MicomFSDeviceModeRead ) ) {
             QMessageBox::critical( this, "Error", "Can't open device" );
 
             delete dialog;

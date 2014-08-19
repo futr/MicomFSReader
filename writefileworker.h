@@ -20,22 +20,22 @@ private:
     int interval;
     bool stopFlag;
     bool m_error;
+    int m_progress;
+    bool m_running;
 
 public:
     bool error( void );
+    int getProgress( void );
+    bool isRunning( void );
 
 signals:
     void errorOccurred( void );
     void finished( void );
-    void progress( int pos, int max, int bytesPerSec, QString fileName );
 
 public slots:
-    void setParameter( QFile *writeFile, MicomFSFile *readFile, int intervalInMS );
+    void setParameter( QFile *writeFile, MicomFSFile *readFile );
     void doSaveFile( void );
     void stopSave( void );
-
-private slots:
-    void updateProgress( void );
 
 };
 

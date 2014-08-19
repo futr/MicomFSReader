@@ -11,6 +11,7 @@
 #include "writefileworker.h"
 #include "micomfs.h"
 #include <QDebug>
+#include <time.h>
 
 
 namespace Ui {
