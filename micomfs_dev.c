@@ -75,6 +75,9 @@ char micomfs_dev_open( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_
     fs->dev_type = dev_type;
     fs->dev_name = malloc( sizeof( char ) * 1024 );
 
+    fs->dev_current_sector = 0;
+    fs->dev_current_spos   = 0;
+
     /* Open the device */
     switch ( dev_type ) {
     case MicomFSDeviceFile:
@@ -235,6 +238,9 @@ char micomfs_dev_start_write( MicomFS *fs, uint32_t sector )
 
         address = (uint64_t)sector * fs->dev_sector_size;
 
+        fs->dev_current_sector = sector;
+        fs->dev_current_spos   = 0;
+
         SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
 #endif
         break;
@@ -344,6 +350,9 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         DWORD dw;
 
         address = (uint64_t)sector * fs->dev_sector_size;
+
+        fs->dev_current_sector = sector;
+        fs->dev_current_spos   = 0;
 
         SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
 
