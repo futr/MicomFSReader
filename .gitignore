@@ -1,5 +1,6 @@
 *~
 *.creator.user*
+*.pro.user*
 *.o
 *.s
 *.lst
