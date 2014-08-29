@@ -20,7 +20,7 @@ void ProgressDialog::setProgressPos( int pos, int max, int bytesPerSec, QString 
 
     QString label;
 
-    label = QString( "%1\n%2 / %3\n%4[MiBps]" ).arg( fileName ).arg( pos ).arg( max ).arg( bytesPerSec / 1024.0 / 1024.0 );
+    label = QString( "%1\n%2 / %3\n%4[MB/s]" ).arg( fileName ).arg( pos ).arg( max ).arg( bytesPerSec / 1024.0 / 1024.0 );
 
     setLabelCaption( label );
 }

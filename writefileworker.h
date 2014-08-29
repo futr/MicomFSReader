@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QTimer>
 #include "micomfs.h"
+#include <time.h>
 
 class WriteFileWorker : public QObject
 {

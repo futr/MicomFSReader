@@ -118,6 +118,7 @@ void Widget::on_saveButton_clicked()
     // Save selected file
     QString name;
     QList<QTreeWidgetItem *> items = ui->fileListWidget->selectedItems();
+    bool yesToAll;
     int i;
 
     if ( items.count() == 0 ) {
@@ -133,6 +134,8 @@ void Widget::on_saveButton_clicked()
 
     // Create progress
     ProgressDialog *progress = new ProgressDialog();
+
+    yesToAll = false;
 
     // Save all selected files
     for ( i = 0; i < items.count(); i++ ) {
@@ -160,13 +163,15 @@ void Widget::on_saveButton_clicked()
         file.setFileName( name + "/" + fp->name );
 
         // 上書き確認
-        if ( file.exists() ) {
-            QMessageBox::StandardButton btn = QMessageBox::question( this, "Overwrite", QString( "%1 is already existing.\nOverwrite it?" ).arg( file.fileName() ), QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel );
+        if ( file.exists() && yesToAll == false ) {
+            QMessageBox::StandardButton btn = QMessageBox::question( this, "Overwrite", QString( "%1 is already existing.\nOverwrite it?" ).arg( file.fileName() ),  QMessageBox::YesToAll | QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel );
 
             if ( btn == QMessageBox::No ) {
                 continue;
             } else if ( btn == QMessageBox::Cancel ) {
                 break;
+            } else if ( btn == QMessageBox::YesToAll ) {
+                yesToAll = true;
             }
         }
 
@@ -174,8 +179,7 @@ void Widget::on_saveButton_clicked()
         file.open( QIODevice::WriteOnly );
 
         // Write file
-        // DEBUG
-        progress->setWindowModality( Qt::ApplicationModal );
+        // progress->setWindowModality( Qt::ApplicationModal );
         progress->setProgressPos( 0, 0, 0, "Null" );
         progress->setProgressMax( fp->sector_count );
 
@@ -191,7 +195,7 @@ void Widget::on_saveButton_clicked()
         saveFileWorker->setParameter( &file, fp );
 
         connect( saveFileWorker, SIGNAL(finished()),    progress,       SLOT(accept()) );
-        connect( progress,       SIGNAL(finished(int)), saveFileWorker, SLOT(stopSave()) );
+        connect( progress,       SIGNAL(finished(int)), saveFileWorker, SLOT(stopSave()), Qt::DirectConnection );
         connect( saveFileThread, SIGNAL(started()),     saveFileWorker, SLOT(doSaveFile()) );
 
         // Exec

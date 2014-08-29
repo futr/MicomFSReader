@@ -6,14 +6,33 @@
 #include <stdio.h>
 #ifdef __MINGW32__
 #include <windows.h>
+#include <math.h>
 #endif
+
+#define WIN_SECTOR_READ_ACCESS_SIZE ( 512 * 128 )
+#define WIN_INVALID_SECTOR 0xFFFFFFFF
+/*
+ * 無効セクターをこのような方法で（セクター番号の最大値）指定しているので
+ * Windowsのディスクの最終セクターにはアクセスできないという仕様が生じます．
+ * 実用的にはそこまでおおきなファイルを扱うことはないと思うので問題ないと思います．
+ *
+ */
 
 /*
  * Windowsのセクターアクセスも境界でセクタサイズしか許されていない
  */
 
+/*
+ * WindowsのAPIを使って512バイト毎にセクターアクセスを行うとあまりに遅いので
+ * 読み込みの場合はWIN_SECTOR_READ_ACCESS_SIZE Bytes一度にバッファへ読み込み，続くアクセスが読み込んだ範囲内なら
+ * 新たなディスクアクセスを実行しません．
+ * これは読み込みの場合だけで，書き込みはバッファリングされません．
+ *
+ */
+
+
 static char sbuf[512];
-static uint16_t spos;
+static char largeBuf[WIN_SECTOR_READ_ACCESS_SIZE];
 
 char micomfs_dev_get_info( MicomFS *fs, uint16_t *sector_size, uint32_t *sector_count )
 {
@@ -121,6 +140,10 @@ char micomfs_dev_open( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_
 #ifdef __MINGW32__
         HANDLE *handle;
         DWORD mode;
+
+        /* 現在のセクターに最大セクター番号を指定してアクセスしていないことを示す */
+        fs->dev_current_sector = WIN_INVALID_SECTOR;
+        fs->dev_current_spos   = 0;
 
         fs->device = malloc( sizeof( HANDLE ) );
         handle = (HANDLE *)fs->device;
@@ -236,9 +259,16 @@ char micomfs_dev_start_write( MicomFS *fs, uint32_t sector )
         /* 移動 */
         uint64_t address;
 
+        /* おかしなセクタ番号では失敗 */
+        if ( sector >= fs->dev_sector_count || sector == WIN_INVALID_SECTOR ) {
+            return 0;
+        }
+
+        /* 書き込みアドレス決定 */
         address = (uint64_t)sector * fs->dev_sector_size;
 
-        fs->dev_current_sector = sector;
+        /* Windowsでの書き込みはバッファリングしないので現在のセクターに書き込みが開始されたフラグとして無効セクター番号を指定 */
+        fs->dev_current_sector = WIN_INVALID_SECTOR;
         fs->dev_current_spos   = 0;
 
         SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
@@ -252,7 +282,7 @@ char micomfs_dev_start_write( MicomFS *fs, uint32_t sector )
     }
 
     /* セクター内位置を0に */
-    spos = 0;
+    fs->dev_current_spos = 0;
 
     return 1;
 }
@@ -274,10 +304,10 @@ char micomfs_dev_write( MicomFS *fs, const void *src, uint16_t count )
     case MicomFSDeviceWinDrive: {
 #ifdef __MINGW32__
         /* sbufへコピー */
-        memcpy( sbuf + spos, src, count );
+        memcpy( sbuf + fs->dev_current_spos, src, count );
 
         /* 進める */
-        spos += count;
+        fs->dev_current_spos += count;
 #endif
         break;
     }
@@ -333,7 +363,6 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         address = (uint64_t)sector * fs->dev_sector_size;
 
         fs->dev_current_sector = sector;
-        fs->dev_current_spos   = 0;
 
         /* 移動 */
         if ( fseeko( fp, address, SEEK_SET ) ) {
@@ -349,19 +378,45 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         uint64_t address;
         DWORD dw;
 
-        address = (uint64_t)sector * fs->dev_sector_size;
-
-        fs->dev_current_sector = sector;
-        fs->dev_current_spos   = 0;
-
-        SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
-
-        /* 読み込み */
-        ReadFile( *( (HANDLE *)fs->device ), sbuf, sizeof( sbuf ), &dw, NULL );
-
-        /* エラーチェック */
-        if ( dw != sizeof( sbuf ) ) {
+        /* おかしなセクタ番号では失敗 */
+        if ( sector >= fs->dev_sector_count || sector == WIN_INVALID_SECTOR ) {
             return 0;
+        }
+
+        /* 前回読み込み成功していてかつ4k範囲内なら新たに読み込まない */
+        if ( fs->dev_current_sector != WIN_INVALID_SECTOR &&
+             ( ( (int64_t)sector - (int64_t)fs->dev_current_sector ) < ( WIN_SECTOR_READ_ACCESS_SIZE / 512 ) &&
+               ( (int64_t)sector - (int64_t)fs->dev_current_sector ) >= 0 ) ) {
+            /* 前回読み込み分に該当 */
+            memcpy( sbuf, largeBuf + ( sector - fs->dev_current_sector ) * 512, 512 );
+        } else {
+            /* 新たなセクターアクセスが必要 */
+
+            /* アクセス予定セクターを丸める */
+            if ( sector < WIN_SECTOR_READ_ACCESS_SIZE / 512 ) {
+                fs->dev_current_sector = sector;
+            } else {
+                fs->dev_current_sector = sector - sector % ( WIN_SECTOR_READ_ACCESS_SIZE / 512 );
+            }
+
+            /* アドレス決定 */
+            address = (uint64_t)fs->dev_current_sector * fs->dev_sector_size;
+
+            /* FP移動 */
+            SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
+
+            /* 読み込み */
+            ReadFile( *( (HANDLE *)fs->device ), largeBuf, sizeof( largeBuf ), &dw, NULL );
+
+            /* セクタ単位読み込みバッファにブロック単位バッファの最初のセクターをコピー */
+            memcpy( sbuf, largeBuf, sizeof( sbuf ) );
+
+            /* エラーチェック */
+            if ( dw != sizeof( largeBuf ) ) {
+                fs->dev_current_sector = WIN_INVALID_SECTOR;
+
+                return 0;
+            }
         }
 #endif
         break;
@@ -373,7 +428,7 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
     }
 
     /* セクター内位置を0に */
-    spos = 0;
+    fs->dev_current_spos = 0;
 
     return 1;
 }
@@ -395,10 +450,10 @@ char micomfs_dev_read( MicomFS *fs, void *dest, uint16_t count )
     case MicomFSDeviceWinDrive: {
 #ifdef __MINGW32__
         /* sbufからコピー */
-        memcpy( dest, sbuf + spos, count );
+        memcpy( dest, sbuf + fs->dev_current_spos, count );
 
         /* 進める */
-        spos += count;
+        fs->dev_current_spos += count;
 #endif
         break;
     }
