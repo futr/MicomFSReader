@@ -377,6 +377,7 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         /* 移動 */
         uint64_t address;
         DWORD dw;
+        DWORD readSize;
 
         /* おかしなセクタ番号では失敗 */
         if ( sector >= fs->dev_sector_count || sector == WIN_INVALID_SECTOR ) {
@@ -392,11 +393,15 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
         } else {
             /* 新たなセクターアクセスが必要 */
 
-            /* アクセス予定セクターを丸める */
-            if ( sector < WIN_SECTOR_READ_ACCESS_SIZE / 512 ) {
-                fs->dev_current_sector = sector;
+            /* 指定ブロックでセクターを丸める */
+            fs->dev_current_sector = sector - sector % ( WIN_SECTOR_READ_ACCESS_SIZE / 512 );
+
+            /* 読み込むべきサイズを決定 */
+            if ( ( fs->dev_sector_count - sector ) < ( WIN_SECTOR_READ_ACCESS_SIZE / 512 ) ) {
+                /* 読み込むセクターが足りないのでサイズを減らす */
+                readSize = ( fs->dev_sector_count - sector ) * 512;
             } else {
-                fs->dev_current_sector = sector - sector % ( WIN_SECTOR_READ_ACCESS_SIZE / 512 );
+                readSize = WIN_SECTOR_READ_ACCESS_SIZE;
             }
 
             /* アドレス決定 */
@@ -406,10 +411,10 @@ char micomfs_dev_start_read( MicomFS *fs, uint32_t sector )
             SetFilePointer( *( (HANDLE *)fs->device ), address, (PLONG)( ( (char *)&address ) + 4 ), FILE_BEGIN );
 
             /* 読み込み */
-            ReadFile( *( (HANDLE *)fs->device ), largeBuf, sizeof( largeBuf ), &dw, NULL );
+            ReadFile( *( (HANDLE *)fs->device ), largeBuf, readSize, &dw, NULL );
 
             /* セクタ単位読み込みバッファにブロック単位バッファの最初のセクターをコピー */
-            memcpy( sbuf, largeBuf, sizeof( sbuf ) );
+            memcpy( sbuf, largeBuf + ( sector - fs->dev_current_sector ) * 512, 512 );
 
             /* エラーチェック */
             if ( dw != sizeof( largeBuf ) ) {
