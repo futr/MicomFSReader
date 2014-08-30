@@ -50,6 +50,9 @@ void Widget::on_openButton_clicked()
         deviceOpened = false;
     }
 
+    ui->fileListWidget->clear();
+    ui->fsInfoListWidget->clear();
+
     // Open device
     if ( !micomfs_open_device( &fs, ui->fileNameEdit->text().toUtf8().data(), MicomFSDeviceFile, MicomFSDeviceModeRead ) ) {
         QMessageBox::critical( this, "Error", "Can't open device" );
@@ -124,6 +127,10 @@ void Widget::on_saveButton_clicked()
     QList<QTreeWidgetItem *> items = ui->fileListWidget->selectedItems();
     bool yesToAll;
     int i;
+
+    if ( !deviceOpened ) {
+        return;
+    }
 
     if ( items.count() == 0 ) {
         return;
