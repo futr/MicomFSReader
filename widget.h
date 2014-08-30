@@ -12,7 +12,7 @@
 #include "micomfs.h"
 #include <QDebug>
 #include <time.h>
-
+#include <unistd.h>
 
 namespace Ui {
 class Widget;
