@@ -30,6 +30,12 @@ void WriteFileWorker::setParameter( QFile *writeFile, MicomFSFile *readFile )
     this->writeFile = writeFile;
 }
 
+void WriteFileWorker::setup()
+{
+    // 初期化など
+    m_running = true;
+}
+
 void WriteFileWorker::doSaveFile( void )
 {
     // Save readFile to writeFile

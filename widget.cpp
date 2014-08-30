@@ -44,7 +44,11 @@ void Widget::on_closeButton_clicked()
 void Widget::on_openButton_clicked()
 {
     // Open file
-    deviceOpened = false;
+    if ( deviceOpened ) {
+        micomfs_close_device( &fs );
+
+        deviceOpened = false;
+    }
 
     // Open device
     if ( !micomfs_open_device( &fs, ui->fileNameEdit->text().toUtf8().data(), MicomFSDeviceFile, MicomFSDeviceModeRead ) ) {
@@ -132,9 +136,6 @@ void Widget::on_saveButton_clicked()
         return;
     }
 
-    // Create progress
-    ProgressDialog *progress = new ProgressDialog();
-
     yesToAll = false;
 
     // Save all selected files
@@ -179,9 +180,15 @@ void Widget::on_saveButton_clicked()
         file.open( QIODevice::WriteOnly );
 
         // Write file
-        // progress->setWindowModality( Qt::ApplicationModal );
+
+        // Create progress
+        ProgressDialog *progress = new ProgressDialog();
         progress->setProgressPos( 0, 0, 0, "Null" );
         progress->setProgressMax( fp->sector_count );
+
+        // Open dialog
+        progress->setModal( true );
+        progress->show();
 
         // Start file access
         micomfs_start_fread( fp, 0 );
@@ -193,6 +200,7 @@ void Widget::on_saveButton_clicked()
         // Setup
         saveFileWorker->moveToThread( saveFileThread );
         saveFileWorker->setParameter( &file, fp );
+        saveFileWorker->setup();
 
         connect( saveFileWorker, SIGNAL(finished()),    progress,       SLOT(accept()) );
         connect( progress,       SIGNAL(finished(int)), saveFileWorker, SLOT(stopSave()), Qt::DirectConnection );
@@ -203,9 +211,6 @@ void Widget::on_saveButton_clicked()
 
         beforeTime     = time( NULL );
         beforeProgress = 0;
-
-        // Open dialog
-        progress->show();
 
         // Event loop
         while ( 1 ) {
@@ -239,6 +244,7 @@ void Widget::on_saveButton_clicked()
         // Delete
         delete saveFileWorker;
         delete saveFileThread;
+        delete progress;
 
         // 閉じる
         micomfs_fclose( fp );
@@ -246,8 +252,6 @@ void Widget::on_saveButton_clicked()
         // close file
         file.close();
     }
-
-    progress->deleteLater();
 }
 
 void Widget::on_openDriveButton_clicked()
@@ -255,7 +259,11 @@ void Widget::on_openDriveButton_clicked()
     // Open Window's logical drive
     LogicalDriveDialog *dialog;
 
-    deviceOpened = false;
+    if ( deviceOpened ) {
+        micomfs_close_device( &fs );
+
+        deviceOpened = false;
+    }
 
     dialog = new LogicalDriveDialog();
 
@@ -348,10 +356,10 @@ void Widget::on_openDriveButton_clicked()
 
         // Update
         updateFileList();
+
+        deviceOpened = true;
 #endif
     }
-
-    deviceOpened = true;
 
     delete dialog;
 }

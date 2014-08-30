@@ -35,6 +35,7 @@ signals:
 
 public slots:
     void setParameter( QFile *writeFile, MicomFSFile *readFile );
+    void setup();
     void doSaveFile( void );
     void stopSave( void );
 
