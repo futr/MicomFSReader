@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = MicomFSReader
 TEMPLATE = app
 
+TRANSLATIONS = mfs_ja.ts
 
 SOURCES += main.cpp\
         widget.cpp \
@@ -35,10 +36,11 @@ OTHER_FILES += \
     win.rc \
     MicomFSReader.exe.manifest
 
-# Manifest
-#
-#win32 {
-#    RC_FILE = win.rc
-#}
-#
+win32 {
+    RC_FILE = win.rc
+}
+
+RESOURCES += \
+    resource.qrc
+
 

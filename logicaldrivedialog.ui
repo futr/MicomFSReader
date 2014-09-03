@@ -17,13 +17,13 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>ドライブを選択</string>
+   <string>Select a drive</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>ドライブを選択</string>
+      <string>Select a drive</string>
      </property>
     </widget>
    </item>
@@ -70,7 +70,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>キャンセル</string>
+        <string>&amp;Cancel</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
@@ -86,7 +86,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>OK</string>
+        <string>&amp;Ok</string>
        </property>
       </widget>
      </item>
@@ -96,22 +96,6 @@
  </widget>
  <resources/>
  <connections>
-  <connection>
-   <sender>okButton</sender>
-   <signal>clicked()</signal>
-   <receiver>LogicalDriveDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>189</x>
-     <y>91</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>215</x>
-     <y>67</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>cancelButton</sender>
    <signal>clicked()</signal>

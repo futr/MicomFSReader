@@ -41,12 +41,17 @@ void WriteFileWorker::doSaveFile( void )
     // Save readFile to writeFile
     uint32_t i;
     char buf[512];
+    QElapsedTimer elapsed;
+    int count;
 
     // init
     m_progress = 0;
     stopFlag   = false;
     m_error    = false;
     m_running  = true;
+
+    count = 0;
+    elapsed.start();
 
     // Save all sectors
     for ( i = 0; i < readFile->sector_count; i++ ) {
@@ -67,6 +72,17 @@ void WriteFileWorker::doSaveFile( void )
 
         // Set progress
         m_progress = i;
+
+        // 進捗
+        count++;
+
+        // 0.5秒ごとに更新
+        if ( elapsed.hasExpired( 100 ) ) {
+            emit progress( m_progress, readFile->sector_count, count * 512 * 10, readFile->name );
+
+            count = 0;
+            elapsed.start();
+        }
     }
 
     // emit error

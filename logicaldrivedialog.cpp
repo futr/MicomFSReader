@@ -95,3 +95,15 @@ QString LogicalDriveDialog::getSelectedLogicalDriveName()
 {
     return ui->driveComboBox->currentText();
 }
+
+void LogicalDriveDialog::on_okButton_clicked()
+{
+    // OK
+    if ( ui->driveComboBox->currentIndex() < 0 ) {
+        reject();
+
+        return;
+    }
+
+    accept();
+}

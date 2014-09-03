@@ -2,6 +2,7 @@
 #define LOGICALDRIVEDIALOG_H
 
 #include <QDialog>
+#include <QMessageBox>
 
 #ifdef __WIN32__
 #include <windows.h>
@@ -21,6 +22,9 @@ public:
 
     void updateLogicalDriveList( void );
     QString getSelectedLogicalDriveName( void );
+
+private slots:
+    void on_okButton_clicked();
 
 private:
     Ui::LogicalDriveDialog *ui;

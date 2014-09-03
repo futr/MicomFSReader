@@ -6,6 +6,8 @@
 #include <QTimer>
 #include "micomfs.h"
 #include <time.h>
+#include <QElapsedTimer>
+#include <unistd.h>
 
 class WriteFileWorker : public QObject
 {
@@ -32,6 +34,7 @@ public:
 signals:
     void errorOccurred( void );
     void finished( void );
+    void progress( int pos, int max, int bytesPerSec, QString name );
 
 public slots:
     void setParameter( QFile *writeFile, MicomFSFile *readFile );

@@ -39,6 +39,8 @@ private slots:
 
     void on_openDriveButton_clicked();
 
+    void on_aboutButton_clicked();
+
 private:
     Ui::Widget *ui;
 
