@@ -70,7 +70,7 @@
       <item>
        <widget class="QTreeWidget" name="fileListWidget">
         <attribute name="headerVisible">
-         <bool>true</bool>
+         <bool>false</bool>
         </attribute>
         <column>
          <property name="text">
@@ -85,19 +85,6 @@
          <widget class="QPushButton" name="saveButton">
           <property name="text">
            <string>&amp;Save</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="deleteButton">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>&amp;Delete</string>
-          </property>
-          <property name="flat">
-           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -124,6 +111,26 @@
           </property>
           <property name="flat">
            <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="deleteButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>&amp;Delete</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="clearButton">
+          <property name="text">
+           <string>De&amp;lete All</string>
           </property>
          </widget>
         </item>

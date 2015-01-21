@@ -81,22 +81,27 @@
         <translation>保存(&amp;S)</translation>
     </message>
     <message>
-        <location filename="widget.ui" line="97"/>
+        <location filename="widget.ui" line="123"/>
         <source>&amp;Delete</source>
         <translation>削除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="widget.ui" line="123"/>
+        <location filename="widget.ui" line="110"/>
         <source>&amp;Add</source>
         <translation>追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="widget.ui" line="159"/>
+        <location filename="widget.ui" line="133"/>
+        <source>De&amp;lete All</source>
+        <translation>全て削除(&amp;L)</translation>
+    </message>
+    <message>
+        <location filename="widget.ui" line="166"/>
         <source>Abou&amp;t</source>
         <translation>このソフトについて(&amp;T)</translation>
     </message>
     <message>
-        <location filename="widget.ui" line="179"/>
+        <location filename="widget.ui" line="186"/>
         <source>&amp;Quit</source>
         <translation>終了(&amp;Q)</translation>
     </message>
@@ -210,6 +215,16 @@ Overwrite it?</source>
         <location filename="widget.cpp" line="300"/>
         <source>Can&apos;t get physical drive name</source>
         <translation>論理ドライブ名を取得できませんでした．</translation>
+    </message>
+    <message>
+        <location filename="widget.cpp" line="376"/>
+        <source>Delete all files</source>
+        <translation>すべてのファイルを削除</translation>
+    </message>
+    <message>
+        <location filename="widget.cpp" line="376"/>
+        <source>Are you sure you want to delete all files?</source>
+        <translation>本当にすべてのファイルを削除しますか？</translation>
     </message>
 </context>
 </TS>

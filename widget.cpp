@@ -54,7 +54,7 @@ void Widget::on_openButton_clicked()
     ui->fsInfoListWidget->clear();
 
     // Open device
-    if ( !micomfs_open_device( &fs, ui->fileNameEdit->text().toUtf8().data(), MicomFSDeviceFile, MicomFSDeviceModeRead ) ) {
+    if ( !micomfs_open_device( &fs, ui->fileNameEdit->text().toUtf8().data(), MicomFSDeviceFile, MicomFSDeviceModeReadWrite ) ) {
         QMessageBox::critical( this, tr( "Error" ), tr( "Can't open device" ) );
 
         return;
@@ -317,7 +317,7 @@ void Widget::on_openDriveButton_clicked()
         */
 
         // Open device ( 権限が不要なので論理ドライブ名のままで実行 )
-        if ( !micomfs_open_device( &fs, (char *)wbuf, MicomFSDeviceWinDrive, MicomFSDeviceModeRead ) ) {
+        if ( !micomfs_open_device( &fs, (char *)wbuf, MicomFSDeviceWinDrive, MicomFSDeviceModeReadWrite ) ) {
             QMessageBox::critical( this, tr( "Error" ), tr( "Can't open device" ) );
 
             delete dialog;
@@ -356,11 +356,40 @@ void Widget::on_aboutButton_clicked()
 
     verStr = verStr +
             "MicomFSReader\n" +
-            "(c) 2014 Masato Takahashi\n" +
+            "(c) 2015 Masato Takahashi\n" +
             "mas@to.email.ne.jp\n\n" +
             "MFSAPI : " + MICOMFS_API_VERSION_CODE;
 
     QMessageBox::about( this,
                         tr( "MicomFSReader" ),
                         verStr );
+}
+
+void Widget::on_clearButton_clicked()
+{
+    // Delete all files
+    if ( !deviceOpened ) {
+        return;
+    }
+
+    // Confirm
+    QMessageBox::StandardButton btn = QMessageBox::warning( this, tr( "Delete all files" ), QString( tr( "Are you sure you want to delete all files?" ) ), QMessageBox::Yes | QMessageBox::No );
+
+    if ( btn == QMessageBox::No ) {
+        return;
+    }
+
+    // Format
+    /*
+    if ( micomfs_format( &fs, fs.sector_size, fs.sector_count, fs.entry_count, 0 ) == 0 ) {
+        QMessageBox::critical( this, "", "" );
+    }
+    */
+    micomfs_format( &fs, fs.sector_size, fs.sector_count, fs.entry_count, 0 );
+
+    // Re-init
+    micomfs_init_fs( &fs );
+
+    // update
+    updateFileList();
 }

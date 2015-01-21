@@ -113,7 +113,7 @@ char micomfs_dev_open( MicomFS *fs, const char *dev_name, MicomFSDeviceType dev_
             break;
 
         case MicomFSDeviceModeReadWrite:
-            mode = "rw";
+            mode = "r+";
             break;
 
         case MicomFSDeviceModeWrite:

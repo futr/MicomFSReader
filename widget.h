@@ -41,6 +41,8 @@ private slots:
 
     void on_aboutButton_clicked();
 
+    void on_clearButton_clicked();
+
 private:
     Ui::Widget *ui;
 
