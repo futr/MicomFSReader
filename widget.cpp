@@ -108,7 +108,7 @@ void Widget::updateFileList()
     for ( i = 0; i < fileCount; i++ ) {
         QList<QTreeWidgetItem *> items;
         items << new QTreeWidgetItem( QStringList() << fileList[i].name << "" );
-        items[0]->setData( 1, Qt::DisplayRole, fileList[i].sector_count * 512 );
+        items[0]->setData( 1, Qt::DisplayRole, (quint64)fileList[i].sector_count * 512 );
         items[0]->setData( 2, Qt::UserRole, QVariant::fromValue( (void *)&fileList[i] ) );
 
         ui->fileListWidget->addTopLevelItems( items );
