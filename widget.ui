@@ -70,7 +70,7 @@
       <item>
        <widget class="QTreeWidget" name="fileListWidget">
         <attribute name="headerVisible">
-         <bool>false</bool>
+         <bool>true</bool>
         </attribute>
         <column>
          <property name="text">
